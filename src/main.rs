@@ -25,6 +25,7 @@ async fn echo(req_body: String) -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    println!("Listening on 8080");
     HttpServer::new(|| {
         let cors = Cors::permissive();
 

@@ -1,4 +1,5 @@
 use std::fs;
+use std::env;
 use actix_cors::Cors;
 use actix_web::{post, App, HttpRequest, HttpResponse, HttpServer, Responder};
 
@@ -26,6 +27,9 @@ async fn echo(req_body: String, req: HttpRequest) -> impl Responder {
     fs::create_dir_all(&path).unwrap();
 
     filename = [path, filename, extension].join("").to_string();
+    let path = env::current_dir().unwrap();
+    println!("The current directory is {}", path.display());
+    println!("Writing to {}", filename);
     let mut file = File::create(filename).expect("error");
     file.write_all(req_body.as_bytes()).expect("Failed to write file");
     HttpResponse::Ok().body(req_body)

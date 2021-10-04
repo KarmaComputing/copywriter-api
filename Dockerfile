@@ -9,6 +9,7 @@ COPY . .
 RUN cargo build --release
 
 FROM gcr.io/distroless/cc-debian10
-COPY --from=builder /app/target/release/copywriter /
-CMD ["./copywriter"]
+WORKDIR /app
+COPY --from=builder /app/target/release/copywriter /app
+CMD ["/app/copywriter"]
 EXPOSE 8080

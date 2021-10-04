@@ -19,3 +19,18 @@ Ref https://github.com/KarmaComputing/copyeditor
 cargo install cargo-watch
 cargo watch -x run
 ```
+
+## Container build /run
+Build
+```
+docker build --tag copywriter .
+```
+Run
+```
+docker run -p 8080:8080 -v $PWD/output:/app/output copywriter
+```
+
+Smoketest
+```
+curl -X POST -v http://127.0.0.1:8089/echo -d "hello"
+```

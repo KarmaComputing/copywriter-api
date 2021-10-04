@@ -1,0 +1,63 @@
+---
+name: 'Deploy'
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+
+jobs:
+  deploy:
+    name: Deploy
+    environment: production
+    runs-on: ubuntu-20.04
+    concurrency:
+      group: main
+      cancel-in-progress: true
+    steps:
+      # third-party action that cancels previous runs
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.4.0
+        with:
+          access_token: ${{ github.token }}
+
+      - name: Cloning repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Create dokku app if doesn't already exist using dokku apps:create
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DOKKU_HOST: ${{ secrets.DOKKU_HOST }}
+        run: |
+          set -x
+          mkdir -p ~/.ssh
+          eval `ssh-agent -s`
+          ssh-add - <<< "$SSH_PRIVATE_KEY"
+          ssh-keyscan $DOKKU_HOST >> ~/.ssh/known_hosts
+          echo Creating dokku app
+          ssh dokku@$DOKKU_HOST -C "dokku apps:create ${{ secrets.DOKKU_APP_NAME }}" | true
+          ssh dokku@$DOKKU_HOST -C "dokku git:initialize ${{ secrets.DOKKU_APP_NAME }}"
+          ssh dokku@$DOKKU_HOST -C "dokku git:set ${{ secrets.DOKKU_APP_NAME }} deploy-branch ${{ secrets.DOKKU_DEPLOY_BRANCH_NAME }}"
+          # set Dokku app environment settings
+          ssh dokku@$DOKKU_HOST -C "dokku config:set --no-restart ${{ secrets.DOKKU_APP_NAME }} SHARED_MOUNT_POINT=${{ secrets.SHARED_MOUNT_POINT }}"
+          # Create shared mount point
+          ssh dokku@$DOKKU_HOST -C "mkdir -p ${{ secrets.HOST_SHARED_DIRECTORY }}"
+          ssh dokku@$DOKKU_HOST -C "mkdir -p ${{ secrets.HOST_SHARED_DIRECTORY }}"
+          ssh dokku@$DOKKU_HOST -C "dokku storage:mount ${{ secrets.APP_NAME }} ${{ secrets.HOST_SHARED_DIRECTORY }}:${{ secrets.SHARED_MOUNT_POINT }}" | true
+
+
+      - name: Deploy to dokku
+        uses: idoberko2/dokku-deploy-github-action@v1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          dokku-host: ${{ secrets.DOKKU_HOST }}
+          app-name: ${{ secrets.DOKKU_APP_NAME }}
+          remote-branch: master
+

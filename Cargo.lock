@@ -461,7 +461,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2df960f5d869b2dd8532793fde43eb5427cceb126c929747a26823ab0eeb536"
 
 [[package]]
-name = "copywrighter"
+name = "copywriter"
 version = "0.1.0"
 dependencies = [
  "actix-cors",
